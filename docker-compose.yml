@@ -1,0 +1,89 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: sw-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rainmaker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:15432:5432" # Bound locally for host security
+    volumes:
+      - ./migrations/ddl:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rainmaker"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: sw-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/2181'"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: sw-kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  sw-services:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    container_name: sw-services-container
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 3468
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: rainmaker
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      KAFKA_BROKER: kafka:9092
+      EGOV_IDGEN_HOST: http://egov-idgen:8080 # Intentional decoupled unreachable core URL
+      WORKFLOW_HOST: http://egov-workflow-v2:8080 # Intentional decoupled unreachable core URL
+    ports:
+      - "3468:3468"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3468/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

@@ -1,0 +1,9 @@
+basePath: /
+host: localhost:3468
+info:
+  contact: {}
+  description: Go-converted DIGIT Sewerage Service
+  title: SW Services API
+  version: "1.0"
+paths: {}
+swagger: "2.0"
