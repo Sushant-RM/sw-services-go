@@ -127,55 +127,75 @@ type WorkflowResponse struct {
 // ============================================================
 
 type PlumberInfo struct {
-	Name         string `json:"name"`
-	LicenseNo    string `json:"licenseNo"`
-	MobileNumber string `json:"mobileNumber"`
+	ID                    string        `json:"id"`
+	Name                  string        `json:"name"`
+	LicenseNo             string        `json:"licenseNo"`
+	MobileNumber          string        `json:"mobileNumber"`
+	Gender                string        `json:"gender"`
+	FatherOrHusbandName   string        `json:"fatherOrHusbandName"`
+	CorrespondenceAddress string        `json:"correspondenceAddress"`
+	Relationship          string        `json:"relationship"`
+	AuditDetails          *AuditDetails `json:"auditDetails"`
 }
 
 type RoadCuttingInfo struct {
-	RoadType        string `json:"roadType"`
-	RoadCuttingArea int    `json:"roadCuttingArea"`
+	ID              string        `json:"id"`
+	Status          string        `json:"status"`
+	RoadType        string        `json:"roadType"`
+	RoadCuttingArea int           `json:"roadCuttingArea"`
+	AuditDetails    *AuditDetails `json:"auditDetails"`
 }
 
 type SewerageConnection struct {
-	ID                  string             `json:"id,omitempty"`
-	TenantID            string             `json:"tenantId"`
-	ConnectionNo        string             `json:"connectionNo,omitempty"`
-	OldConnectionNo     string             `json:"oldConnectionNo,omitempty"`
-	ApplicationNumber   string             `json:"applicationNumber,omitempty"` // for Go repository compatibility
-	ApplicationNo       string             `json:"applicationNo,omitempty"`     // DIGIT exact contract
-	ApplicationType     string             `json:"applicationType"`             // "NEW_CONNECTION"
-	ApplicationStatus   string             `json:"applicationStatus,omitempty"` // Go service DB representation
-	Status              string             `json:"status,omitempty"`            // DIGIT exact representation
-	ConnectionType      string             `json:"connectionType"`              // "Permanent"
-	NoOfToilets         int                `json:"noOfToilets,omitempty"`
-	NoOfWaterClosets    int                `json:"noOfWaterClosets,omitempty"`
-	PropertyID          string             `json:"propertyId,omitempty"`
-	PropertyUsageType   string             `json:"propertyUsageType,omitempty"`
-	ConnectionHolders   []ConnectionHolder `json:"connectionHolders,omitempty"`
-	PlumberInfo         []PlumberInfo      `json:"plumberInfo,omitempty"`
-	RoadCuttingInfo     []RoadCuttingInfo  `json:"roadCuttingInfo,omitempty"`
-	Documents           []Document         `json:"documents,omitempty"`
-	ProcessInstance     ProcessInstance    `json:"processInstance"`
-	AdditionalDetails   interface{}        `json:"additionalDetails,omitempty"`
-	AuditDetails        *AuditDetails      `json:"auditDetails,omitempty"`
-	Channel             string             `json:"channel,omitempty"`
-	RoadType            string             `json:"roadType,omitempty"`
-	RoadCuttingArea     int                `json:"roadCuttingArea,omitempty"`
+	ID                         string             `json:"id,omitempty"`
+	TenantID                   string             `json:"tenantId"`
+	ConnectionNo               string             `json:"connectionNo"`
+	OldConnectionNo            string             `json:"oldConnectionNo"`
+	ApplicationNumber          string             `json:"applicationNumber,omitempty"` // for Go repository compatibility
+	ApplicationNo              string             `json:"applicationNo"`     // DIGIT exact contract
+	ApplicationType            string             `json:"applicationType"`             // "NEW_CONNECTION"
+	ApplicationStatus          string             `json:"applicationStatus"` // Go service DB representation
+	Status                     string             `json:"status"`            // DIGIT exact representation
+	ConnectionType             string             `json:"connectionType"`              // "Permanent"
+	NoOfToilets                int                `json:"noOfToilets,omitempty"`
+	NoOfWaterClosets           int                `json:"noOfWaterClosets,omitempty"`
+	PropertyID                 string             `json:"propertyId,omitempty"`
+	PropertyUsageType          string             `json:"propertyUsageType"`
+	ConnectionHolders          []ConnectionHolder `json:"connectionHolders"`
+	PlumberInfo                []PlumberInfo      `json:"plumberInfo"`
+	RoadCuttingInfo            []RoadCuttingInfo  `json:"roadCuttingInfo"`
+	Documents                  []Document         `json:"documents"`
+	ProcessInstance            ProcessInstance    `json:"processInstance"`
+	AdditionalDetails          interface{}        `json:"additionalDetails"`
+	AuditDetails               *AuditDetails      `json:"auditDetails,omitempty"`
+	Channel                    string             `json:"channel"`
+	RoadType                   string             `json:"roadType"`
+	RoadCuttingArea            int                `json:"roadCuttingArea,omitempty"`
+	OldApplication             bool               `json:"oldApplication"`
+	IsDisconnectionTemporary   bool               `json:"isDisconnectionTemporary"`
+	DisconnectionReason        string             `json:"disconnectionReason"`
+	DateEffectiveFrom          int64              `json:"dateEffectiveFrom"`
+	ConnectionExecutionDate    int64              `json:"connectionExecutionDate"`
+	ProposedWaterClosets       int                `json:"proposedWaterClosets"`
+	ProposedToilets            int                `json:"proposedToilets"`
+	DisconnectionExecutionDate int64              `json:"disconnectionExecutionDate"`
 }
 
 type ConnectionHolder struct {
-	ID                    string `json:"id,omitempty"`
-	TenantID              string `json:"tenantId"`
-	OwnerShipCategory     string `json:"ownerShipCategory,omitempty"`
-	Name                  string `json:"name,omitempty"`
-	Gender                string `json:"gender,omitempty"`
-	FatherOrHusbandName   string `json:"fatherOrHusbandName,omitempty"`
-	Relationship          string `json:"relationship,omitempty"`
-	MobileNumber          string `json:"mobileNumber,omitempty"`
-	IsSameAsPropertyOwner bool   `json:"isSameAsPropertyOwner,omitempty"`
-	UserUUID              string `json:"userUUID,omitempty"`
-	OwnerType             string `json:"ownerType,omitempty"`
+	ID                    string  `json:"id,omitempty"`
+	TenantID              string  `json:"tenantId"`
+	OwnerShipCategory     string  `json:"ownerShipCategory,omitempty"`
+	Name                  string  `json:"name,omitempty"`
+	Gender                string  `json:"gender,omitempty"`
+	FatherOrHusbandName   string  `json:"fatherOrHusbandName,omitempty"`
+	Relationship          string  `json:"relationship"`
+	MobileNumber          string  `json:"mobileNumber,omitempty"`
+	IsSameAsPropertyOwner bool    `json:"isSameAsPropertyOwner,omitempty"`
+	UUID                  string  `json:"uuid"`
+	OwnerType             string  `json:"ownerType,omitempty"`
+	Status                string  `json:"status"`
+	IsPrimaryOwner        bool    `json:"isPrimaryOwner"`
+	OwnerShipPercentage   float64 `json:"ownerShipPercentage"`
 }
 
 type AuditDetails struct {

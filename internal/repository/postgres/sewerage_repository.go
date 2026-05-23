@@ -64,21 +64,22 @@ func (r *sewerageRepository) CreateConnection(
 	query := `
 INSERT INTO eg_sw_connection (
 	id,
-	tenant_id,
-	application_number,
+	tenantid,
+	applicationno,
 	property_id,
-	connection_type,
-	road_type,
-	road_cutting_area,
-	application_status,
+	connectiontype,
+	roadtype,
+	roadcuttingarea,
+	applicationstatus,
+	status,
 	channel,
 	connection_holders,
 	plumber_info,
 	road_cutting_info,
-	created_by,
-	last_modified_by,
-	created_time,
-	last_modified_time
+	createdby,
+	lastmodifiedby,
+	createdtime,
+	lastmodifiedtime
 )
 VALUES (
 	$1,
@@ -96,7 +97,8 @@ VALUES (
 	$13,
 	$14,
 	$15,
-	$16
+	$16,
+	$17
 )
 `
 
@@ -118,6 +120,7 @@ VALUES (
 		connection.RoadType,
 		connection.RoadCuttingArea,
 		connection.ApplicationStatus,
+		connection.ApplicationStatus, // status
 		connection.Channel,
 		connectionHoldersJSON,
 		plumberInfoJSON,
@@ -144,18 +147,18 @@ func (r *sewerageRepository) SearchConnection(
 
 	query := `
 SELECT
-	tenant_id,
+	tenantid,
 	property_id,
-	application_number,
-	connection_type,
-	road_type,
-	road_cutting_area,
-	application_status,
+	applicationno,
+	connectiontype,
+	roadtype,
+	roadcuttingarea,
+	applicationstatus,
 	channel,
 	connection_holders,
 	plumber_info,
 	road_cutting_info,
-	connection_no
+	connectionno
 FROM eg_sw_connection
 WHERE 1=1
 `
@@ -164,13 +167,13 @@ WHERE 1=1
 	argPosition := 1
 
 	if tenantID != "" {
-		query += "\nAND tenant_id = $" + fmt.Sprint(argPosition)
+		query += "\nAND tenantid = $" + fmt.Sprint(argPosition)
 		args = append(args, tenantID)
 		argPosition++
 	}
 
 	if applicationNumber != "" {
-		query += "\nAND application_number = $" + fmt.Sprint(argPosition)
+		query += "\nAND applicationno = $" + fmt.Sprint(argPosition)
 		args = append(args, applicationNumber)
 		argPosition++
 	}
@@ -275,15 +278,15 @@ func (r *sewerageRepository) UpdateConnection(
 
 	query := `
 UPDATE eg_sw_connection SET
-	connection_type = $1,
-	application_status = $2,
-	connection_no = $3,
+	connectiontype = $1,
+	applicationstatus = $2,
+	connectionno = $3,
 	connection_holders = $4,
 	plumber_info = $5,
 	road_cutting_info = $6,
-	last_modified_by = $7,
-	last_modified_time = $8
-WHERE application_number = $9
+	lastmodifiedby = $7,
+	lastmodifiedtime = $8
+WHERE applicationno = $9
 `
 
 	lastModifiedBy := "system"
