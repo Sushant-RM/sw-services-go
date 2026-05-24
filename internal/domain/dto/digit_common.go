@@ -57,32 +57,7 @@ func NewResponseInfo(reqInfo *RequestInfo, status string) ResponseInfo {
 	}
 }
 
-// ============================================================
-// IDGEN STRUCTS
-// ============================================================
 
-type IDGenRequest struct {
-	RequestInfo RequestInfo `json:"RequestInfo"`
-	IDRequests  []IDRequest `json:"idRequests"`
-}
-
-type IDRequest struct {
-	IDName   string `json:"idName"`
-	Format   string `json:"format"`
-	TenantID string `json:"tenantId"`
-	Count    int    `json:"count"`
-}
-
-type IDGenResponse struct {
-	ResponseInfo ResponseInfo `json:"ResponseInfo"`
-	IDResponses  []IDResponse `json:"idResponses"`
-}
-
-type IDResponse struct {
-	IDName string `json:"idName"`
-	Format string `json:"format"`
-	ID     string `json:"id"`
-}
 
 // ============================================================
 // WORKFLOW STRUCTS
@@ -102,6 +77,13 @@ type ProcessInstance struct {
 	Assignes        []Assignee `json:"assignes,omitempty"`
 	Documents       []Document `json:"documents,omitempty"`
 	ModuleName      string     `json:"moduleName"`
+	State           *State     `json:"state,omitempty"`
+}
+
+type State struct {
+	UUID              string `json:"uuid"`
+	State             string `json:"state"`
+	ApplicationStatus string `json:"applicationStatus"`
 }
 
 type Assignee struct {
@@ -205,43 +187,3 @@ type AuditDetails struct {
 	LastModifiedTime int64  `json:"lastModifiedTime"`
 }
 
-type CreateSewerageConnectionRequest struct {
-	RequestInfo                RequestInfo        `json:"RequestInfo"`
-	SewerageConnection         SewerageConnection `json:"SewerageConnection"`
-	IsCreateCall               bool               `json:"isCreateCall,omitempty"`
-	IsOldDataEncryptionRequest bool               `json:"isOldDataEncryptionRequest,omitempty"`
-	DisconnectRequest          bool               `json:"disconnectRequest,omitempty"`
-}
-
-type SewerageConnectionRequest struct {
-	RequestInfo                RequestInfo        `json:"RequestInfo"`
-	SewerageConnection         SewerageConnection `json:"SewerageConnection"`
-	IsCreateCall               bool               `json:"isCreateCall,omitempty"`
-	IsOldDataEncryptionRequest bool               `json:"isOldDataEncryptionRequest,omitempty"`
-	DisconnectRequest          bool               `json:"disconnectRequest,omitempty"`
-}
-
-type SewerageConnectionResponse struct {
-	ResponseInfo        ResponseInfo         `json:"ResponseInfo"`
-	SewerageConnections []SewerageConnection `json:"SewerageConnections"`
-	TotalCount          int                  `json:"totalCount,omitempty"`
-}
-
-type CreateSewerageConnectionResponse struct {
-	ResponseInfo        ResponseInfo         `json:"ResponseInfo"`
-	SewerageConnections []SewerageConnection `json:"SewerageConnections"`
-}
-
-type SearchSewerageConnectionResponse struct {
-	ResponseInfo        ResponseInfo         `json:"ResponseInfo"`
-	SewerageConnections []SewerageConnection `json:"SewerageConnections"`
-	TotalCount          int                  `json:"TotalCount"`
-}
-
-type SearchSewerageConnectionRequest struct {
-	RequestInfo RequestInfo `json:"RequestInfo"`
-}
-
-type RequestInfoWrapper struct {
-	RequestInfo RequestInfo `json:"RequestInfo"`
-}

@@ -3,3 +3,6 @@
 bin/
 dist/
 vendor/
+sw-services
+artifacts/
+*.log

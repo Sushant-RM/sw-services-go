@@ -1,7 +1,4 @@
-// IDGEN CLIENT: Drop into internal/service/idgen_client.go
-// Calls DIGIT's egov-idgen service to generate DIGIT-compatible IDs
-
-package service
+package integration
 
 import (
 	"bytes"
@@ -76,7 +73,6 @@ func (c *IDGenClient) GenerateID(reqInfo dto.RequestInfo, idName, format, tenant
 	return result.IDResponses[0].ID, nil
 }
 
-// Convenience: Generate SW application number
 func (c *IDGenClient) GenerateApplicationNo(reqInfo dto.RequestInfo, tenantId string) (string, error) {
 	return c.GenerateID(
 		reqInfo,
@@ -86,7 +82,6 @@ func (c *IDGenClient) GenerateApplicationNo(reqInfo dto.RequestInfo, tenantId st
 	)
 }
 
-// Convenience: Generate SW connection number (only after approval)
 func (c *IDGenClient) GenerateConnectionNo(reqInfo dto.RequestInfo, tenantId string) (string, error) {
 	return c.GenerateID(
 		reqInfo,

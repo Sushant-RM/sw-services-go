@@ -8,6 +8,7 @@ import (
 	"github.com/BrajK111/sw-services/internal/domain/dto"
 	"github.com/BrajK111/sw-services/internal/service"
 	"github.com/BrajK111/sw-services/internal/transport/http/response"
+	"github.com/BrajK111/sw-services/internal/validator"
 )
 
 type SewerageHandler struct {
@@ -45,6 +46,20 @@ func (h *SewerageHandler) CreateConnection(
 			http.StatusBadRequest,
 			"INVALID_REQUEST",
 			"Invalid request payload: "+err.Error(),
+		)
+		return
+	}
+
+	createRequest := dto.CreateSewerageConnectionRequest{
+		RequestInfo:        request.RequestInfo,
+		SewerageConnection: request.SewerageConnection,
+	}
+	if err := validator.ValidateCreateConnection(createRequest); err != nil {
+		response.WriteError(
+			w,
+			http.StatusBadRequest,
+			"INVALID_REQUEST",
+			err.Error(),
 		)
 		return
 	}

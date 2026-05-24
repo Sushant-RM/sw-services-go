@@ -20,17 +20,5 @@ func ValidateCreateConnection(
 		return errors.New("propertyId is required")
 	}
 
-	if connection.ConnectionType == "" {
-		return errors.New("connectionType is required")
-	}
-
-	if connection.RoadType == "" {
-		return errors.New("roadType is required")
-	}
-
-	if connection.ApplicationStatus == "" {
-		return errors.New("applicationStatus is required")
-	}
-
 	return nil
 }

@@ -1,13 +1,11 @@
-// WORKFLOW CLIENT: Drop into internal/service/workflow_client.go
-// Calls DIGIT's egov-workflow-v2 service for state transitions
-
-package service
+package integration
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -31,10 +29,9 @@ func NewWorkflowClient() *WorkflowClient {
 	}
 }
 
-// CallWorkflow transitions workflow state - call this on EVERY create/update
 func (c *WorkflowClient) CallWorkflow(reqInfo dto.RequestInfo, conn dto.SewerageConnection) (*dto.ProcessInstance, error) {
 	if conn.ProcessInstance.Action == "" {
-		return nil, nil // workflow not triggered if no ProcessInstance in request
+		return nil, nil
 	}
 
 	pi := conn.ProcessInstance
@@ -85,6 +82,9 @@ func (c *WorkflowClient) CallWorkflow(reqInfo dto.RequestInfo, conn dto.Sewerage
 		return nil, fmt.Errorf("decode workflow response: %w", err)
 	}
 
+	debugBytes, _ := json.Marshal(result)
+	log.Printf("[DEBUG] Workflow transition response: %s", string(debugBytes))
+
 	if len(result.ProcessInstances) == 0 {
 		return nil, fmt.Errorf("workflow returned empty response")
 	}
@@ -92,7 +92,6 @@ func (c *WorkflowClient) CallWorkflow(reqInfo dto.RequestInfo, conn dto.Sewerage
 	return &result.ProcessInstances[0], nil
 }
 
-// GetWorkflowStatus retrieves current workflow status for an application
 func (c *WorkflowClient) GetWorkflowStatus(reqInfo dto.RequestInfo, tenantId, businessId string) (string, error) {
 	url := fmt.Sprintf("%s/egov-workflow-v2/egov-wf/process/_search?tenantId=%s&businessIds=%s",
 		c.baseURL, tenantId, businessId)
@@ -109,7 +108,6 @@ func (c *WorkflowClient) GetWorkflowStatus(reqInfo dto.RequestInfo, tenantId, bu
 	defer resp.Body.Close()
 
 	b, _ := io.ReadAll(resp.Body)
-	// Extract status from response - adjust based on actual workflow response structure
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return "", err

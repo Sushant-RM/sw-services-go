@@ -12,11 +12,12 @@ import (
 	_ "github.com/BrajK111/sw-services/docs"
 
 	"github.com/BrajK111/sw-services/internal/config"
-	"github.com/BrajK111/sw-services/internal/kafka"
+	"github.com/BrajK111/sw-services/internal/integration"
 	"github.com/BrajK111/sw-services/internal/repository/postgres"
 	"github.com/BrajK111/sw-services/internal/service"
 	"github.com/BrajK111/sw-services/internal/transport/http/handler"
 	"github.com/BrajK111/sw-services/internal/transport/http/middleware"
+	"github.com/BrajK111/sw-services/internal/transport/kafka/producer"
 
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -37,15 +38,15 @@ func main() {
 
 	repository := postgres.NewSewerageRepository(db)
 
-	idGenClient := service.NewIDGenClient()
-	workflowClient := service.NewWorkflowClient()
-	producer := kafka.NewProducer()
+	idGenClient := integration.NewIDGenClient()
+	workflowClient := integration.NewWorkflowClient()
+	kafkaProducer := producer.NewProducer()
 
 	sewerageService := service.NewSewerageService(
 		repository,
+		kafkaProducer,
 		idGenClient,
 		workflowClient,
-		producer,
 	)
 
 	sewerageHandler := handler.NewSewerageHandler(
