@@ -181,34 +181,70 @@ bash 15_full_readiness_audit.sh
 
 ### 10.2 Verify SQL Row Persistency
 ```bash
-docker exec -it sw-postgres psql -U postgres -d rainmaker
-SELECT application_number, connection_type, application_status FROM eg_sw_connection LIMIT 1;
+docker exec -it sw-postgres psql -U postgres -d rainmaker -c "SELECT applicationno, connectionno, applicationstatus FROM eg_sw_connection LIMIT 5;"
 ```
 
 ---
 
-## 11. Migration Challenges Solved
+## 11. Multi-Terminal Live Demonstration (Presentation-Ready)
+
+To showcase realistic municipal workflow coordination, the project features a professional **Multi-Terminal Live Demonstration Package** using our copy-paste-safe automated transition client tool (`scratch/transition.sh`):
+
+* **📟 Terminal 1 → Citizen (User)**: Submits connection applications and initiates workflow.
+* **📟 Terminal 2 → Verifier / Field Inspector**: Inspects documents and site measurements.
+* **📟 Terminal 3 → Admin / Approver / Billing**: Approves requests, allocates legal IDs, and activates accounts.
+
+### Run transitions step-by-step:
+```bash
+# 📟 Terminal 1 (Citizen): Submit application
+bash scratch/transition.sh $APP_NO SUBMIT_APPLICATION
+
+# 📟 Terminal 2 (Verifier): Document Verification
+bash scratch/transition.sh $APP_NO VERIFY_AND_FORWARD
+
+# 📟 Terminal 2 (Inspector): Site Feasibility Check
+bash scratch/transition.sh $APP_NO VERIFY_AND_FORWARD
+
+# 📟 Terminal 3 (Approver): Grant Connection ID
+bash scratch/transition.sh $APP_NO APPROVE_FOR_CONNECTION
+
+# 📟 Terminal 3 (Billing): Apportion and Settle Payment
+bash scratch/transition.sh $APP_NO PAY
+
+# 📟 Terminal 3 (Activation): Make Connection Operational
+bash scratch/transition.sh $APP_NO ACTIVATE_CONNECTION
+```
+
+*For complete instructions and talking points, see the official [Live Demonstration Guide](docs/final_engineering_report.md#8-testing-acceptance--edge-cases).*
+
+---
+
+## 12. Migration Challenges Solved
 
 * **DTO Alignment:** Programmatically mapped Hibernate floating-point types (`Double`) and millisecond BigInts (`Long`) to clean Go types.
 * **Relational JSONB Integration:** Integrated nested dynamic holder arrays directly to native database `jsonb` column schemas.
 * **Asynchronous Resiliency:** Developed decoupled workflow fallbacks, allowing the microservice to proceed with database writes and return successful REST responses if remote platform adapters are offline.
+* **Sparse Update Merging:** Developed a **Fetch-Before-Merge** state persistence strategy to ensure incoming sparse REST updates never overwrite unchanged connection records in PostgreSQL.
 
 ---
 
-## 12. Project Status & Future Roadmap
+## 13. Project Status & Future Roadmap
 
 ### Completed Tasks:
-* 100% API route and DTO contract parity.
-* PostgreSQL relational persistence with custom schema optimizations.
-* Sarama-driven cp-kafka integration coordinated via cp-zookeeper.
-* VM-optimized container memory allocations.
+* [x] 100% API route and DTO contract parity.
+* [x] PostgreSQL relational persistence with custom schema optimizations.
+* [x] Sarama-driven cp-kafka integration coordinated via cp-zookeeper.
+* [x] **Fetch-Before-Merge** update validation protecting database columns from sparse updates.
+* [x] **Automated Workflow Transition Tool** (`scratch/transition.sh`) using valid SUPERUSER context for robust demo execution.
+* [x] Comprehensive platform-engineering migration report structured according to the official template.
 
 ### Pending Milestones:
-* Attaching the Go-converted Water/Sewerage Calculator (`sw-calculator-go`) to the runtime loops.
-* Complete Blue-Green live production hot-swap cutovers inside large municipal clusters.
+* Blue-Green live production hot-swap cutovers inside large municipal Kubernetes clusters.
+* Core integration with active OpenTelemetry telemetry frameworks.
 
 ---
 
-## 13. Conclusion
+## 14. Conclusion
 
 This repository represents the ongoing microservice migration of core municipal services within the DIGIT open-source ecosystem. By matching all contract specifications, Postgres parameters, and Kafka messaging queues at a 40x memory saving, the Go Sewerage Service proves that compiled, lightweight services present a highly reliable, cost-efficient path for scaling modern Digital Public Infrastructure.
+
