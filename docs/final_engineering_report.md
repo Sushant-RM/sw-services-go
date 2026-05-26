@@ -50,6 +50,44 @@ graph TD
 
 With the shift from Java's Hibernate (JPA) to Go's GORM/SQL-based layer, object-relational mapping becomes highly explicit. Core database entities are mapped to clean Go structs with appropriate JSON tags and relationships.
 
+#### Relational Entity-Relationship Diagram (ERD)
+
+```mermaid
+erDiagram
+    EG_PROPERTY {
+        varchar id PK
+        varchar propertyid UK
+        varchar tenantid
+        varchar status
+    }
+    EG_SW_CONNECTION {
+        varchar id PK
+        varchar applicationno UK
+        varchar connectionno UK
+        varchar property_id FK "References eg_property.propertyid"
+        varchar applicationstatus
+        jsonb connection_holders
+        jsonb road_cutting_info
+    }
+    EG_DEMAND {
+        varchar id PK
+        varchar consumercode FK "References connectionno / applicationno"
+        varchar businessservice
+        bigint taxperiodfrom
+        bigint taxperiodto
+    }
+    EG_DEMAND_DETAIL {
+        varchar id PK
+        varchar demandid FK "References eg_demand.id"
+        varchar taxheadcode
+        numeric taxamount
+    }
+
+    EG_PROPERTY ||--o{ EG_SW_CONNECTION : "hosts"
+    EG_SW_CONNECTION ||--o{ EG_DEMAND : "generates charges for"
+    EG_DEMAND ||--|{ EG_DEMAND_DETAIL : "comprises"
+```
+
 #### PostgreSQL Table Layout
 ```sql
 CREATE TABLE eg_sw_connection (
