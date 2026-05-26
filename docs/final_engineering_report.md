@@ -40,7 +40,7 @@ graph TD
     Service -- Synchronous REST Proxy --> Workflow["egov-workflow-v2 Client<br>(internal/integration)"]
     Service -- Sync Write --> Repos["PostgreSQL Repository<br>(internal/repository/postgres)"]
     Service -- Async Broker Event --> Kafka["Kafka Producer<br>(internal/transport/kafka/producer)"]
-    Repos --> DB[("PostgreSQL DB<br>(eg_sw_connection)")]
+    Repos --> DB[("PostgreSQL DB eg_sw_connection")]
     Kafka --> Topic["update-sw-connection Topic"]
 ```
 
