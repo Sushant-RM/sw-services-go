@@ -165,7 +165,7 @@ To prove functional parity under tested scenarios, the migrated Go service repla
 
 #### The "Swap and Test" Strategy
 1. **Environment Preparation**: Shuts down the legacy Java container (`docker stop sw-services-java`).
-2. **Service Replacement**: Deploys the built Go static binary as a container on the exact same port mapping (`3468:8080`) and network overlay (`digit_sw_net`).
+2. **Service Replacement**: Deploys the built Go static binary as a container on the same external port mapping (`3468`) within the `digit_sw_net` orchestrated overlay.
 3. **Functional Parity Check**: Runs the automated modular lifecycle orchestrator script (`scratch/full_demo_runner.sh`), demonstrating full workflow transitions from `INITIATED` to `CONNECTION_ACTIVATED` across 7 validation sub-stages.
 
 #### 🔬 Benchmark Methodology & Context
