@@ -18,6 +18,8 @@
 
 This document serves as a structured engineering report and living documentation guide for the migration of DIGIT-OSS municipal services from Java (Spring Boot) to Go (Gin/GORM). The goal of this activity is to modernize the ecosystem, reducing memory footprints and increasing concurrency performance.
 
+**Project Positioning**: A tested Java-to-Go migration of the DIGIT Sewerage Connection Service preserving workflow interoperability and ecosystem compatibility under orchestrated integration scenarios.
+
 **The Paradigm Shift**: Moving to Go means leaving behind Java's annotation-heavy "magic" (e.g., `@Autowired`, `@RestController`) in favor of explicit wiring, interface-driven design, and layered routing. Teams must duplicate this template and continuously update it as a formal record of their specific module's architecture and logic translation.
 
 #### Observed Operational Context
@@ -29,18 +31,18 @@ This document serves as a structured engineering report and living documentation
 
 ### 2. High-Level Architectural Flow
 
-The transition requires a strict separation of concerns. Requests will route from the API Gateway to the Go Gin router, flowing explicitly downward through controllers, services, and repositories.
+The transition requires a strict separation of concerns. Requests will route from the client/API Gateway to the Go Gin router, flowing explicitly downward through controllers, services, and repositories.
 
 ```mermaid
 graph TD
-    Client["Citizen / Back-Office Client"] -- HTTP POST --> Gateway["API Gateway (egov-gateway)"]
-    Gateway -- Route Request --> Service["Sewerage Service Layer<br>(internal/service)"]
+    Client["Citizen / Back-Office Client"] -- HTTP POST --> Gateway["Go Gin HTTP Handler<br>(transport/http/handler)"]
+    Gateway -- Bind JSON DTO --> Service["Sewerage Service Layer<br>(internal/service)"]
     Service -- Synchronous REST Proxy --> IDGen["egov-idgen Peer Client<br>(internal/integration)"]
     Service -- Synchronous REST Proxy --> Workflow["egov-workflow-v2 Client<br>(internal/integration)"]
     Service -- Sync Write --> Repos["PostgreSQL Repository<br>(internal/repository/postgres)"]
     Service -- Async Broker Event --> Kafka["Kafka Producer<br>(internal/transport/kafka/producer)"]
     Repos --> DB[("PostgreSQL DB eg_sw_connection")]
-    Kafka --> Topic["update-sw-connection Topic"]
+    Kafka --> Topic["save/update-sw-connection Topic"]
 ```
 
 ---
@@ -49,49 +51,29 @@ graph TD
 
 With the shift from Java's Hibernate (JPA) to Go's GORM, object-relational mapping becomes highly explicit. Teams must map legacy database entities to Go structs, applying proper JSON tags and relationships.
 
-#### Relational Entity-Relationship Diagram (ERD)
+#### Minimal Database Entity-Relationship Diagram (ERD)
 
 ```mermaid
 erDiagram
-    EG_PROPERTY {
-        varchar id PK
-        varchar propertyid UK
-        varchar tenantid
-        varchar status
-    }
     EG_SW_CONNECTION {
         varchar id PK
         varchar applicationno UK
         varchar connectionno UK
-        varchar property_id FK "References eg_property.propertyid"
+        varchar property_id FK "Logical reference to external Property"
         varchar applicationstatus
-        jsonb connection_holders
-        jsonb road_cutting_info
+        jsonb connection_holders "JSONB array of Holders"
+        jsonb plumber_info "JSONB plumber metadata"
+        jsonb road_cutting_info "JSONB array of road cutting details"
+        bigint createdtime
+        bigint lastmodifiedtime
     }
-    EG_DEMAND {
-        varchar id PK
-        varchar consumercode FK "References connectionno / applicationno"
-        varchar businessservice
-        bigint taxperiodfrom
-        bigint taxperiodto
-    }
-    EG_DEMAND_DETAIL {
-        varchar id PK
-        varchar demandid FK "References eg_demand.id"
-        varchar taxheadcode
-        numeric taxamount
-    }
-
-    EG_PROPERTY ||--o{ EG_SW_CONNECTION : "hosts"
-    EG_SW_CONNECTION ||--o{ EG_DEMAND : "generates charges for"
-    EG_DEMAND ||--|{ EG_DEMAND_DETAIL : "comprises"
 ```
 
 #### Data Dictionary Translation
 
 | Legacy Java Entity | New Go Struct (GORM) | Target PostgreSQL Table |
 | :--- | :--- | :--- |
-| `Property.java` | `models.Property` | `eg_pt_property` |
+| `Property.java` | `models.Property` | `eg_pt_property` (External) |
 | `SewerageConnection.java` | `dto.SewerageConnection` | `eg_sw_connection` |
 | `ConnectionHolder.java` | `dto.ConnectionHolder` | `connection_holders` (`jsonb` array) |
 | `PlumberInfo.java` | `dto.PlumberInfo` | `plumber_info` (`jsonb`) |
@@ -132,7 +114,6 @@ In a distributed systems topology, service dependencies can fail independently. 
 * **Kafka Broker Offline**: When the Kafka broker becomes unavailable, the Sarama producer logs a critical warning, allowing local PostgreSQL writes to proceed and returning a successful REST response to prevent blocking citizen ingestion flows.
 * **Workflow Service Offline**: If the external `egov-workflow-v2` engine times out or goes offline, the transaction is gracefully rolled back locally, returning an HTTP 500 error code with details to ensure workflow consistency.
 * **IDGen Failure**: When `egov-idgen` is unresponsive, a robust client fallback automatically generates a unique local application number (`SW-APP-xxxxxxxx`), allowing citizen registration to complete.
-* **Partial Failures & Retry Policies**: No distributed transaction coordinator exists in DIGIT. Out-of-sync states between PostgreSQL and peer platforms are bounded by external platform auditing routines.
 
 ---
 
