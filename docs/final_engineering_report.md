@@ -88,31 +88,6 @@ erDiagram
     EG_DEMAND ||--|{ EG_DEMAND_DETAIL : "comprises"
 ```
 
-#### PostgreSQL Table Layout
-```sql
-CREATE TABLE eg_sw_connection (
-    id character varying(256) NOT NULL,
-    tenantid character varying(256) NOT NULL,
-    applicationno character varying(256) NOT NULL,
-    property_id character varying(256) NOT NULL,
-    connectiontype character varying(256),
-    roadtype character varying(256),
-    roadcuttingarea double precision,
-    applicationstatus character varying(256),
-    status character varying(256),
-    channel character varying(256),
-    connection_holders jsonb,
-    plumber_info jsonb,
-    road_cutting_info jsonb,
-    createdby character varying(256),
-    lastmodifiedby character varying(256),
-    createdtime bigint,
-    lastmodifiedtime bigint,
-    connectionno character varying(256),
-    CONSTRAINT pk_eg_sw_connection PRIMARY KEY (id)
-);
-```
-
 #### Data Dictionary Translation
 
 | Legacy Java Entity | New Go Struct (GORM / DTO) | Target PostgreSQL Table / Column |
@@ -220,16 +195,3 @@ The migration of the sewerage connection module is complete and verified under t
 * [x] **Code Structure Compliance**: Strictly adheres to the Go layered architecture (`cmd/sw-services` for entry bootstrapper, `internal/` for models, integration clients, services, and repositories).
 * [x] **API Contracts Updated**: Endpoint structures and parameters have perfect functional and payload interface parity.
 * [x] **Documentation Complete**: Fully updated with realistic engineering and distributed limitations metrics.
-
-#### 🔮 Known Limitations & Future Enhancements
-* **Production-Scale Load Testing**: The Go microservice throughput limits under heavy concurrent load (e.g. 10,000 requests/sec) have not been evaluated.
-* **Kubernetes High-Availability (HA)**: Real K8s pod replica horizontal autoscaling, ingress configuration, and active failover policies have not been tested.
-* **Transactional Outbox Pattern**: Lacks a dedicated transactional outbox worker. Direct publish failures to Kafka are logged, but not retried from a local persistent buffer.
-* **Observability Instrumentation**: Spans for OpenTelemetry, Jaeger, Prometheus, or structured Grafana log tracing are currently pending.
-* **User Interface Integration**: Direct browser validation has not been performed; testing was completed strictly via REST interface suites.
-
-#### 🧠 Engineering Lessons Learned
-* **Kafka Schema Compatibility**: Standardizing on the precise JSON payload formats defined by legacy Java models is crucial to prevent downstream consumers from failing during ingestion.
-* **Workflow Contract Preservation**: The external workflow state engine acts as the source of truth; preserving actions and exact states strictly prevents workflow halts.
-* **Ecosystem Interoperability**: Decoupling integrations into clean client abstractions under `internal/integration/` preserves structural maintainability and ownership boundaries.
-* **Distributed Debugging**: Structured trace logs and robust fallback UUID generation simplify tracking connection sequences as transactions transition across boundaries.
