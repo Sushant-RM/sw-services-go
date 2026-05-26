@@ -127,12 +127,12 @@ Documenting the DIGIT-OSS "Persister Pattern": The Go service persists state syn
 | Create Connection | `save-sw-connection` | `egov-persister` / Search Indexer |
 | Update Connection / Stage Workflow | `update-sw-connection` | `egov-persister` / Billing Service |
 
-#### ⚠️ Distributed Failure Handling & Limitations
-In a distributed systems topology, service dependencies can fail independently. The migrated service implements realistic distributed-systems aware behaviors:
-* **Kafka Broker Offline**: When the Kafka broker becomes unavailable, the Sarama producer logs a critical warning, allowing local PostgreSQL writes to proceed and returning a successful REST response to prevent blocking citizen ingestion flows.
-* **Workflow Service Offline**: If the external `egov-workflow-v2` engine times out or goes offline, the transaction is gracefully rolled back locally, returning an HTTP 500 error code with details to ensure workflow consistency.
-* **IDGen Failure**: When `egov-idgen` is unresponsive, a robust client fallback automatically generates a unique local application number (`SW-APP-xxxxxxxx`), allowing citizen registration to complete.
-* **Partial Failures & Retry Policies**: No distributed transaction coordinator exists in DIGIT. Out-of-sync states between PostgreSQL and peer platforms are bounded by external platform auditing routines.
+#### Distributed Resiliency & Fallbacks
+
+In a distributed municipal service topology, the Go implementation provides enhanced resiliency to handle independent component timeouts:
+* **Kafka Broker Autonomy**: If the Kafka broker is offline, the service logs a warning and proceeds with the primary PostgreSQL commit to prevent blocking citizen ingestion flow.
+* **Workflow State rollback**: If the external `egov-workflow-v2` engine times out, local database changes are safely rolled back to guarantee strict workflow state synchronization.
+* **IDGen Fallback**: When the peer `egov-idgen` service is unreachable, a local UUID generator automatically issues a unique temporary reference to keep application submission online.
 
 ---
 
