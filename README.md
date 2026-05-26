@@ -2,7 +2,7 @@
 
 This repository houses the compiled, production-grade Go-converted implementation of the Sewerage Connection Service (`sw-services`) from the open-source Digital Infrastructure for Governance, Impact & Transformation (DIGIT) platform. 
 
-This is a **distributed microservice migration project** designed to act as a 100% drop-in runtime replacement for the official Spring Boot (Java) service inside active municipal clusters.
+This is a **distributed microservice migration project** designed to act as a runtime-compatible replacement for the official Spring Boot (Java) service inside active municipal clusters under tested sandbox scenarios.
 
 ---
 
@@ -10,7 +10,7 @@ This is a **distributed microservice migration project** designed to act as a 10
 
 **DIGIT** is India's leading open-source governance platform, providing the foundational digital infrastructure for urban local bodies to deliver municipal services online. Within the platform's business services layer, the Sewerage Connection Service (`sw-services`) manages the lifecycle of sewerage line connections, applicant documentation, inspection transitions, billing authorizations, and outbound event streaming.
 
-Originally written in Java on Spring Boot 2.2.6, the service demands substantial system memory (~480MB RAM at idle), causing resource contention in lightweight VM deployments. To optimize municipal operations, this repository converts the core sewerage microservice into a compiled Go binary, cutting idle RAM allocation to **12MB** (a 40x reduction) while maintaining absolute system compatibility.
+Originally written in Java on Spring Boot 2.2.6, the service demands substantial system memory (~480MB RAM at idle), causing resource contention in lightweight VM deployments. To optimize municipal operations, this repository converts the core sewerage microservice into a compiled Go binary, cutting idle RAM allocation to **12MB** (a 40x reduction) while maintaining high runtime system compatibility.
 
 ---
 
@@ -18,9 +18,9 @@ Originally written in Java on Spring Boot 2.2.6, the service demands substantial
 
 The goal is to replace the official Java `sw-services` microservice with our Go implementation without modifying peer or core services inside the distributed DIGIT platform. 
 
-To achieve a seamless runtime swap, the conversion preserves complete compatibility across:
+To achieve a seamless runtime swap, the conversion preserves behavioral parity validated at API, persistence, and event layers:
 * **API Routing:** Zero path modifications for gateways (`zuul`) or front-end portals.
-* **DTO Data Contracts:** Perfect serialization matching for all nested envelopes (including `RequestInfo`/`ResponseInfo` structures).
+* **DTO Data Contracts:** Aligned serialization matching for all nested envelopes (including `RequestInfo`/`ResponseInfo` structures).
 * **Database Persistency:** Flyway-aligned Postgres relational tables.
 * **Broker Event Loops:** Compliant event payloads published directly to the active Kafka brokers.
 * **State Machine Coordination:** Clean processes matching existing workflow status models.
@@ -60,11 +60,11 @@ The migrated microservice operates as a self-contained node inside the container
 
 ## 4. Features Implemented
 
-* **Parity REST APIs:** Full coverage for `_create`, `_search`, `_update`, `_count`, and `/health` checkpoints.
+* **Parity REST APIs:** Aligned coverage for `_create`, `_search`, `_update`, `_count`, and `/health` checkpoints.
 * **DIGIT Schema Serializers:** Matches complex platform metadata arrays.
-* **Flyway Relational Persistency:** Full SQL support synchronized with standard millisecond big integers.
+* **Flyway Relational Persistency:** SQL support synchronized with standard millisecond big integers.
 * **Outbound Sarama Client:** Direct stream integrations with confluent brokers.
-* **Try-Catch Client Resilience:** Automatic fallback formatting (generating local sequence IDs such as `SW-APP-5ef87f80`) when dependency nodes are unreachable.
+* **Try-Catch Client Resilience:** Automatic fallback formatting (generating local sequence IDs such as `SW-APP-5ef87f80`) when dependency nodes are unreachable under tested scenarios.
 * **Tuned Docker Containers:** Multi-stage image footprints resulting in a clean 15MB ELF runtime layer.
 * **Panic Recoveries:** Production-grade error routing and structured Middlewares.
 
@@ -171,17 +171,24 @@ All requests accept a JSON body containing a standard `RequestInfo` metadata env
 
 ## 10. Testing & Verification
 
-A 6-stage automated validation toolkit verifies full drop-in parity under live workloads:
+A 7-stage automated validation master suite verifies behavioral parity under tested scenarios:
 
-### 10.1 Execute Automated Regression Suite
+### 10.1 Execute Local Orchestrated Master Suite (Self-Contained)
+Execute the master suite directly inside the repository to run a 7-stage verification (ecosystem checks, citizen workflows, verifier/inspector flows, billing payment, direct database SQL schema columns validation, Kafka partition audits, and edge-case exceptions handling):
+```bash
+# Run self-contained verification suite
+bash scratch/full_demo_runner.sh
+```
+
+### 10.2 Execute External Automated Integration Toolkit
 ```bash
 cd /home/sushant/CDPI/DIGIT-OSS/municipal-services/sw-automation-toolkit/sw-automation
 bash 15_full_readiness_audit.sh
 ```
 
-### 10.2 Verify SQL Row Persistency
+### 10.3 Verify PostgreSQL Database Records Directly
 ```bash
-docker exec -it sw-postgres psql -U postgres -d rainmaker -c "SELECT applicationno, connectionno, applicationstatus FROM eg_sw_connection LIMIT 5;"
+docker exec -it sw-postgres psql -U postgres -d rainmaker -c "SELECT applicationno, connectionno, applicationstatus FROM eg_sw_connection ORDER BY createdtime DESC LIMIT 5;"
 ```
 
 ---
@@ -231,7 +238,7 @@ bash scratch/transition.sh $APP_NO ACTIVATE_CONNECTION
 ## 13. Project Status & Future Roadmap
 
 ### Completed Tasks:
-* [x] 100% API route and DTO contract parity.
+* [x] API route and DTO contract alignment under tested orchestration scenarios.
 * [x] PostgreSQL relational persistence with custom schema optimizations.
 * [x] Sarama-driven cp-kafka integration coordinated via cp-zookeeper.
 * [x] **Fetch-Before-Merge** update validation protecting database columns from sparse updates.
