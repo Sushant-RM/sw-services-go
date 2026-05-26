@@ -32,6 +32,8 @@ Moving to Go means leaving behind Java's annotation-heavy "magic" (e.g., `@Autow
 
 The transition requires a strict separation of concerns. Requests route from the API Gateway to the Go Gin router, flowing explicitly downward through controllers, services, and repositories.
 
+![sw-services-go High-Level System Architecture Flow Diagram](sw_services_architecture_flow.png)
+
 ```mermaid
 graph TD
     Client["Citizen / Back-Office Client"] -- HTTP POST --> Gateway["API Gateway / Gin Router<br>(transport/http/handler)"]

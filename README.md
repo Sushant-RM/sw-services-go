@@ -29,6 +29,8 @@ To achieve a seamless runtime swap, the conversion preserves complete compatibil
 
 ## 3. Architecture Overview
 
+![sw-services-go High-Level System Architecture Flow Diagram](docs/sw_services_architecture_flow.png)
+
 The migrated microservice operates as a self-contained node inside the containerized staging cluster:
 
 ```
