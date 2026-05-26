@@ -18,10 +18,9 @@
 
 This document serves as a structured engineering report and living documentation guide for the migration of DIGIT-OSS municipal services from Java (Spring Boot) to Go (Gin/GORM). The goal of this activity is to modernize the ecosystem, reducing memory footprints and increasing concurrency performance.
 
-#### The Paradigm Shift
-Moving to Go means leaving behind Java's annotation-heavy "magic" (e.g., `@Autowired`, `@RestController`, `@Service`, `@Repository`) in favor of explicit wiring, interface-driven design, and layered routing. Our team has successfully engineered a **runtime-compatible migration** of the **Sewerage Connection Service (`sw-services-go`)**, replacing reflection-based layers with compiled components where **behavioral parity is validated at API, persistence, and event layers**.
+**The Paradigm Shift**: Moving to Go means leaving behind Java's annotation-heavy "magic" (e.g., `@Autowired`, `@RestController`) in favor of explicit wiring, interface-driven design, and layered routing. Teams must duplicate this template and continuously update it as a formal record of their specific module's architecture and logic translation.
 
-##### Observed Operational Context
+#### Observed Operational Context
 * **Resource Optimization**: Compiles to a self-contained statically linked Alpine container (~22MB), replacing the legacy Java container (~290MB).
 * **RAM footprint (Idle)**: Reduced memory usage to ~15MB (compared to legacy JVM idle at ~480MB).
 * **Startup Initialization**: Near-zero container boot times (~0.015s) compared to legacy boot latency (~12.4s).
@@ -30,7 +29,7 @@ Moving to Go means leaving behind Java's annotation-heavy "magic" (e.g., `@Autow
 
 ### 2. High-Level Architectural Flow
 
-The transition requires a strict separation of concerns. Requests route from the Zuul Gateway or local clients to the Go Gin router, flowing explicitly downward through handlers, services, and repositories:
+The transition requires a strict separation of concerns. Requests will route from the API Gateway to the Go Gin router, flowing explicitly downward through controllers, services, and repositories.
 
 ```mermaid
 graph TD
@@ -48,7 +47,7 @@ graph TD
 
 ### 3. Database ER Model & Translations
 
-With the shift from Java's Hibernate (JPA) to Go's GORM/SQL-based layer, object-relational mapping becomes highly explicit. Core database entities are mapped to clean Go structs with appropriate JSON tags and relationships.
+With the shift from Java's Hibernate (JPA) to Go's GORM, object-relational mapping becomes highly explicit. Teams must map legacy database entities to Go structs, applying proper JSON tags and relationships.
 
 #### Relational Entity-Relationship Diagram (ERD)
 
@@ -90,8 +89,9 @@ erDiagram
 
 #### Data Dictionary Translation
 
-| Legacy Java Entity | New Go Struct (GORM / DTO) | Target PostgreSQL Table / Column |
+| Legacy Java Entity | New Go Struct (GORM) | Target PostgreSQL Table |
 | :--- | :--- | :--- |
+| `Property.java` | `models.Property` | `eg_pt_property` |
 | `SewerageConnection.java` | `dto.SewerageConnection` | `eg_sw_connection` |
 | `ConnectionHolder.java` | `dto.ConnectionHolder` | `connection_holders` (`jsonb` array) |
 | `PlumberInfo.java` | `dto.PlumberInfo` | `plumber_info` (`jsonb`) |
@@ -102,7 +102,7 @@ erDiagram
 
 ### 4. Component & Dependency Integration
 
-Municipal services do not operate in isolation. The Go sewerage service makes dedicated synchronous REST API calls to adjacent peer modules to fulfill transaction processes, routed through decoupled client abstractions inside `internal/integration/`:
+Municipal services do not operate in isolation. Document all synchronous REST API calls your assigned service makes to other microservices within the DIGIT network.
 
 ```mermaid
 graph LR
@@ -120,7 +120,7 @@ graph LR
 
 ### 5. Asynchronous Data Flow & Persistence
 
-Documenting the DIGIT-OSS "Persister Pattern": The Go service persists state synchronously in its local database, and produces events to Kafka which are consumed by the platform's persister engine to sync downstream indexes and ledger records.
+Document the DIGIT-OSS "Persister Pattern". Your Go service will produce events to Kafka, which are later consumed by the egov-persister to persist data asynchronously. Establish strict parity with the legacy Kafka topics.
 
 | Trigger Action | Kafka Topic Produced | Downstream Consumer |
 | :--- | :--- | :--- |
@@ -138,35 +138,37 @@ In a distributed systems topology, service dependencies can fail independently. 
 
 ### 6. API Contracts & Endpoint Mapping
 
-A running matrix of endpoints shows high runtime compatibility, ensuring no APIs were orphaned during the migration:
+Keep a running matrix of all endpoints being ported to ensure no APIs are orphaned during the migration.
 
-| Legacy Java (Spring Boot) | New Go (Gin Router / http) | Migration Status |
+| Legacy Java (Spring Boot) | New Go (Gin Router) | Migration Status |
 | :--- | :--- | :--- |
-| `@PostMapping("/swc/_create")` | `router.POST("/sw-services/swc/_create", handler.CreateConnection)` | **Done (Validated)** |
-| `@PostMapping("/swc/_update")` | `router.POST("/sw-services/swc/_update", handler.UpdateConnection)` | **Done (Validated)** |
-| `@PostMapping("/swc/_search")` | `router.POST("/sw-services/swc/_search", handler.SearchConnection)` | **Done (Validated)** |
-| `@PostMapping("/swc/_count")` | `router.POST("/sw-services/swc/_count", handler.CountConnections)` | **Done (Validated)** |
-| `@GetMapping("/actuator/health")` | `router.GET("/sw-services/actuator/health", handler.HealthCheck)` | **Done (Validated)** |
+| `@PostMapping("/swc/_create")` | `router.POST("/sw-services/swc/_create", handler.CreateConnection)` | **Done** |
+| `@PostMapping("/swc/_update")` | `router.POST("/sw-services/swc/_update", handler.UpdateConnection)` | **Done** |
+| `@PostMapping("/swc/_search")` | `router.POST("/sw-services/swc/_search", handler.SearchConnection)` | **Done** |
+| `@PostMapping("/swc/_count")` | `router.POST("/sw-services/swc/_count", handler.CountConnections)` | **Done** |
+| `@GetMapping("/actuator/health")` | `router.GET("/sw-services/actuator/health", handler.HealthCheck)` | **Done** |
 
 ---
 
 ### 7. Domain Logic & Calculations
 
-`sw-services-go` owns connection lifecycle management and status synchronization. Core calculation engine functions are decoupled as per standard platform architecture:
+**Note**: This section is primarily for calculation engines (e.g., `sw-calculator`, `pt-calculator`). Document the pure financial formulas and rate lookups implemented inside your `internal/service/` packages.
+* **Formula Implementations**: Document the exact math logic (e.g., simple interest, tax rebates, penalty logic).
+* **MDMS Integrations**: Detail how the calculator fetches and applies master data constraints, grace periods, and tier rates.
 
-* **Calculation engine**: All tax billing calculations and apportionments are delegated to the calculator microservice (`sw-calculator`) via REST.
-* **Fetch-Before-Merge update strategy**: Implemented within `internal/service/connection_service.go` to prevent incoming sparse state updates (which only contain processInstance variables) from overwriting existing database fields with default zero-values. The service fetches the original record first, merges updates, and commits the fully populated connection back to PostgreSQL.
+*Note: In `sw-services-go`, pure billing calculations and fee apportionments are delegated dynamically to the external calculation service `/sw-calculator` via REST. The service itself owns connection status transitions and a robust **Fetch-Before-Merge** sparse updates strategy inside `internal/service/connection_service.go` to prevent incoming partial payloads from wiping existing columns in PostgreSQL.*
 
 ---
 
 ### 8. Testing, Acceptance & Edge Cases
 
-To prove functional parity under tested scenarios, the migrated Go service replaces the legacy Java service inside the orchestrated local integration network.
+To prove absolute functional parity, your migrated Go service must seamlessly replace the existing Java service. Testing must go beyond happy paths.
 
 #### The "Swap and Test" Strategy
-1. **Environment Preparation**: Shuts down the legacy Java container (`docker stop sw-services-java`).
-2. **Service Replacement**: Deploys the built Go static binary as a container on the same external port mapping (`3468`) within the `digit_sw_net` orchestrated overlay.
-3. **Functional Parity Check**: Runs the automated modular lifecycle orchestrator script (`scratch/full_demo_runner.sh`), demonstrating full workflow transitions from `INITIATED` to `CONNECTION_ACTIVATED` across 7 validation sub-stages.
+
+* **Environment Preparation**: Shuts down the legacy Java container (`docker stop sw-services-java`).
+* **Service Replacement**: Deploys the built Go static binary as a container on the same external port mapping (`3468`) within the `digit_sw_net` orchestrated overlay.
+* **Functional Parity Check**: Runs the automated modular lifecycle orchestrator script (`scratch/full_demo_runner.sh`), demonstrating full workflow transitions from `INITIATED` to `CONNECTION_ACTIVATED` across 7 validation sub-stages.
 
 #### 🔬 Benchmark Methodology & Context
 * **Orchestration Context**: Measured within orchestrated Docker-based integration environment running on a local Ubuntu virtual machine (Ubuntu 22.04 LTS, 4 vCPUs, 8 GB RAM).
@@ -176,22 +178,22 @@ To prove functional parity under tested scenarios, the migrated Go service repla
 * **Benchmark Disclaimer**: *Values represent observations made during testing under controlled sandbox orchestration conditions. Actual production metrics and values may vary under production workloads depending on clustering configurations, network latency, and physical host system metrics.*
 
 #### API Edge Case Documentation
+You must explicitly document all edge cases tested against your API endpoints. Validating these ensures that the new Go routing and error handling logic handle failures and unexpected inputs exactly as the legacy Java code did.
 
 | API Endpoint | Edge Case Scenario Tested | Expected Outcome (Java Parity) | Actual Outcome (Go) |
 | :--- | :--- | :--- | :--- |
-| `POST /_create` | Payload missing mandatory `tenantId` | `400 Bad Request` with custom DIGIT error format | **[PASS]** Intercepted: HTTP 400 |
-| `POST /_create` | Payload missing mandatory `propertyId` | `400 Bad Request` with custom DIGIT error format | **[PASS]** Intercepted: HTTP 400 |
-| `POST /_create` | Malformed JSON Payload Body | `400 Bad Request` | **[PASS]** Intercepted: HTTP 400 |
-| `POST /_update` | Invalid workflow transition | Handled transition exception | **[PASS]** Handled and rejected gracefully |
-| `POST /_update` | Unauthorized role performing action | Workflow authorization block | **[PASS]** Intercepted and blocked |
+| `POST /swc/_create` | Payload missing mandatory `tenantId` | `400 Bad Request` with custom DIGIT error format | **[PASS]** Intercepted: HTTP 400 |
+| `POST /swc/_create` | Payload missing mandatory `propertyId` | `400 Bad Request` with custom DIGIT error format | **[PASS]** Intercepted: HTTP 400 |
+| `POST /swc/_create` | Malformed JSON Payload Body | `400 Bad Request` | **[PASS]** Intercepted: HTTP 400 |
+| `POST /swc/_update` | Invalid workflow transition | Handled transition exception | **[PASS]** Handled and rejected gracefully |
+| `POST /swc/_update` | Unauthorized role performing action | Workflow authorization block | **[PASS]** Intercepted and blocked |
 
 ---
 
 ### 9. Quality Assurance & Final Deliverables
 
-The migration of the sewerage connection module is complete and verified under tested orchestration scenarios:
-
-* [x] **"Swap and Test" Parity**: The Go service replaces the legacy Java service in the Docker network, coordinating workflow stages successfully.
-* [x] **Code Structure Compliance**: Strictly adheres to the Go layered architecture (`cmd/sw-services` for entry bootstrapper, `internal/` for models, integration clients, services, and repositories).
-* [x] **API Contracts Updated**: Endpoint structures and parameters have perfect functional and payload interface parity.
-* [x] **Documentation Complete**: Fully updated with realistic engineering and distributed limitations metrics.
+The migration of a municipal module is complete only when the following checklist is fulfilled and verified:
+* [x] **"Swap and Test" Parity**: The new Go pod successfully replaces the legacy Java pod locally, validating all edge cases and functional workflows.
+* [x] **Code Structure Compliance**: Code adheres to the Go layered architecture (e.g., `cmd/` for entry, `internal/` for private logic).
+* [x] **API Contracts Updated**: A verified Postman or Swagger collection of the new Go APIs is attached to the final Pull Request.
+* [x] **Documentation Complete**: This engineering report is fully populated with all relevant diagrams, mappings, and formulas.
