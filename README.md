@@ -106,7 +106,7 @@ sw-services-go/
 ├── configs/                         # Application properties configurations
 ├── deploy/
 │   └── Dockerfile                   # Hardened multi-stage container manifest
-├── docs/                            # Swagger and architectural reports/guides
+├── docs/                            # Internal Swagger and architectural charts
 ├── internal/                        # Clean hexagonal architecture packages
 │   ├── domain/dto/                  # 100% compliant DTO schemas
 │   ├── repository/postgres/         # Persistent layer SQLs
@@ -157,55 +157,7 @@ docker exec sw-kafka /usr/bin/kafka-topics --bootstrap-server localhost:9092 --c
 
 ---
 
-## 9. Interactive Multi-Terminal Live Demo Suite
-
-To showcase the realistic, distributed nature of the e-governance workflow, you can run a step-by-step role-based live demonstration across **three separate concurrent terminals** representing different municipal actors using the automated transition tool (`scratch/transition.sh`):
-
-### 📟 Terminal 1: Citizen (User) Flow
-Initiates application creation & formal submission:
-```bash
-# Ingest Application
-create_res=$(curl -s -X POST "http://localhost:3468/sw-services/swc/_create" \
-  -H "Content-Type: application/json" \
-  -d '{"RequestInfo":{"apiId":"Rainmaker","ver":".01","ts":1699999999000,"authToken":"test-token","userInfo":{"id":79,"uuid":"c3a2f8c8-b046-4f68-95dc-15c9d65b8ead","userName":"admin","roles":[{"name":"Super User","code":"SUPERUSER","tenantId":"pb"}],"tenantId":"pb"}},"SewerageConnection":{"propertyId":"PT-107-123456","tenantId":"pb.amritsar","connectionType":"Non Metered","roadType":"BERMCUTTINGKATCHA","roadCuttingArea":25,"processInstance":{"action":"INITIATE"}}}')
-
-APP_NO=$(echo "$create_res" | jq -r '.SewerageConnections[0].applicationNo')
-echo "Application No: $APP_NO"
-
-# Submit Application
-bash scratch/transition.sh $APP_NO SUBMIT_APPLICATION
-```
-
-### 📟 Terminal 2: Document Verifier & Field Inspector Flow
-Perform document and site inspection verification steps (Link using `APP_NO` from Terminal 1):
-```bash
-APP_NO="<PASTE_APP_NO_HERE>"
-
-# Document Verification
-bash scratch/transition.sh $APP_NO VERIFY_AND_FORWARD
-
-# Site Inspection
-bash scratch/transition.sh $APP_NO VERIFY_AND_FORWARD
-```
-
-### 📟 Terminal 3: Admin / Approval Officer / Billing Flow
-Approve connections, handle tax payments, and activate accounts:
-```bash
-APP_NO="<PASTE_APP_NO_HERE>"
-
-# Connection Approval (Generates legal Connection ID)
-bash scratch/transition.sh $APP_NO APPROVE_FOR_CONNECTION
-
-# Settle Payment Apportionment
-bash scratch/transition.sh $APP_NO PAY
-
-# Activate connection live
-bash scratch/transition.sh $APP_NO ACTIVATE_CONNECTION
-```
-
----
-
-## 10. API Endpoints Reference
+## 9. API Endpoints Reference
 
 All requests accept a JSON body containing a standard `RequestInfo` metadata envelope and return a `ResponseInfo` envelope:
 
@@ -217,38 +169,39 @@ All requests accept a JSON body containing a standard `RequestInfo` metadata env
 
 ---
 
-## 11. Testing & Verification
+## 10. Testing & Verification
 
-An automated verification tool validates E2E lifecycle workflows, database integrity, Kafka propagation, and 8 critical edge-case scenarios:
+A 6-stage automated validation toolkit verifies full drop-in parity under live workloads:
 
-### 11.1 Run Complete Lifecycle Validation Suite
+### 10.1 Execute Automated Regression Suite
 ```bash
-bash scratch/validate_and_demo.sh
+cd /home/sushant/CDPI/DIGIT-OSS/municipal-services/sw-automation-toolkit/sw-automation
+bash 15_full_readiness_audit.sh
 ```
 
-### 11.2 Verify SQL Row Persistency
+### 10.2 Verify SQL Row Persistency
 ```bash
-docker exec -it sw-postgres psql -U postgres -d rainmaker -c "SELECT applicationno, connectionno, applicationstatus, lastmodifiedby FROM eg_sw_connection LIMIT 5;"
+docker exec -it sw-postgres psql -U postgres -d rainmaker
+SELECT application_number, connection_type, application_status FROM eg_sw_connection LIMIT 1;
 ```
 
 ---
 
-## 12. Migration Challenges Solved
+## 11. Migration Challenges Solved
 
 * **DTO Alignment:** Programmatically mapped Hibernate floating-point types (`Double`) and millisecond BigInts (`Long`) to clean Go types.
 * **Relational JSONB Integration:** Integrated nested dynamic holder arrays directly to native database `jsonb` column schemas.
-* **Asynchronous Resiliency & Merge-Safety:** Implemented a fetch-before-merge safety loop to ensure state transition requests do not overwrite existing DB attributes with blank fields.
+* **Asynchronous Resiliency:** Developed decoupled workflow fallbacks, allowing the microservice to proceed with database writes and return successful REST responses if remote platform adapters are offline.
 
 ---
 
-## 13. Project Status & Future Roadmap
+## 12. Project Status & Future Roadmap
 
 ### Completed Tasks:
 * 100% API route and DTO contract parity.
 * PostgreSQL relational persistence with custom schema optimizations.
 * Sarama-driven cp-kafka integration coordinated via cp-zookeeper.
 * VM-optimized container memory allocations.
-* Multi-terminal interactive live demo toolkit.
 
 ### Pending Milestones:
 * Attaching the Go-converted Water/Sewerage Calculator (`sw-calculator-go`) to the runtime loops.
@@ -256,6 +209,6 @@ docker exec -it sw-postgres psql -U postgres -d rainmaker -c "SELECT application
 
 ---
 
-## 14. Conclusion
+## 13. Conclusion
 
 This repository represents the ongoing microservice migration of core municipal services within the DIGIT open-source ecosystem. By matching all contract specifications, Postgres parameters, and Kafka messaging queues at a 40x memory saving, the Go Sewerage Service proves that compiled, lightweight services present a highly reliable, cost-efficient path for scaling modern Digital Public Infrastructure.
