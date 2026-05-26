@@ -33,8 +33,8 @@ The transition requires a strict separation of concerns. Requests will route fro
 
 ```mermaid
 graph TD
-    Client["Citizen / Back-Office Client"] -- HTTP POST --> Gateway["Zuul Gateway / HTTP Router<br>(transport/http/handler)"]
-    Gateway -- Bind JSON DTO --> Service["Sewerage Service Layer<br>(internal/service)"]
+    Client["Citizen / Back-Office Client"] -- HTTP POST --> Gateway["API Gateway (egov-gateway)"]
+    Gateway -- Route Request --> Service["Sewerage Service Layer<br>(internal/service)"]
     Service -- Synchronous REST Proxy --> IDGen["egov-idgen Peer Client<br>(internal/integration)"]
     Service -- Synchronous REST Proxy --> Workflow["egov-workflow-v2 Client<br>(internal/integration)"]
     Service -- Sync Write --> Repos["PostgreSQL Repository<br>(internal/repository/postgres)"]

@@ -19,7 +19,7 @@ Originally written in Java on Spring Boot 2.2.6, the service demands substantial
 The goal is to replace the official Java `sw-services` microservice with our Go implementation without modifying peer or core services inside the distributed DIGIT platform. 
 
 To achieve a seamless runtime swap, the conversion preserves behavioral parity validated at API, persistence, and event layers:
-* **API Routing:** Zero path modifications for gateways (`zuul`) or front-end portals.
+* **API Routing:** Zero path modifications for gateways (`egov-gateway`) or front-end portals.
 * **DTO Data Contracts:** Aligned serialization matching for all nested envelopes (including `RequestInfo`/`ResponseInfo` structures).
 * **Database Persistency:** Flyway-aligned Postgres relational tables.
 * **Broker Event Loops:** Compliant event payloads published directly to the active Kafka brokers.
@@ -32,7 +32,7 @@ To achieve a seamless runtime swap, the conversion preserves behavioral parity v
 The migrated microservice operates as a self-contained node inside the containerized staging cluster:
 
 ```
-                  [ZUUL GATEWAY / HTTP CLIENT]
+                  [API GATEWAY / HTTP CLIENT]
                                |
                                v
                        [Mux HTTP Router]
