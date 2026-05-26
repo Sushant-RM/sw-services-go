@@ -6,3 +6,4 @@ vendor/
 sw-services
 artifacts/
 *.log
+scratch/.current_app_no
