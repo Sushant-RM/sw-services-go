@@ -22,12 +22,12 @@ check_port() {
 echo -e "Probing local network container sockets..."
 ERRORS=0
 
-check_port "localhost" 35432 "PostgreSQL Database (sw-postgres)" || ERRORS=$((ERRORS+1))
-check_port "localhost" 39092 "Apache Kafka Broker (sw-kafka)" || ERRORS=$((ERRORS+1))
-check_port "localhost" 3468 "Go Sewerage Service (sw-sw-services)" || ERRORS=$((ERRORS+1))
-check_port "localhost" 3457 "egov-idgen Peer" || ERRORS=$((ERRORS+1))
-check_port "localhost" 3463 "egov-workflow-v2 Peer" || ERRORS=$((ERRORS+1))
-check_port "localhost" 3466 "property-services Peer" || ERRORS=$((ERRORS+1))
+check_port "127.0.0.1" 35432 "PostgreSQL Database (sw-postgres)" || ERRORS=$((ERRORS+1))
+check_port "127.0.0.1" 39092 "Apache Kafka Broker (sw-kafka)" || ERRORS=$((ERRORS+1))
+check_port "127.0.0.1" 3468 "Go Sewerage Service (sw-sw-services)" || ERRORS=$((ERRORS+1))
+check_port "127.0.0.1" 3457 "egov-idgen Peer" || ERRORS=$((ERRORS+1))
+check_port "127.0.0.1" 3463 "egov-workflow-v2 Peer" || ERRORS=$((ERRORS+1))
+check_port "127.0.0.1" 3466 "property-services Peer" || ERRORS=$((ERRORS+1))
 
 echo -e "----------------------------------------------------------------------"
 if [ $ERRORS -eq 0 ]; then

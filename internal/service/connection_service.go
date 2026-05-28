@@ -113,7 +113,10 @@ func (s *sewerageService) CreateConnection(
 	if s.workflowClient != nil {
 		pi, err := s.workflowClient.CallWorkflow(reqInfo, connection)
 		if err != nil {
-			log.Printf("Warning: Workflow transition failed: %v", err)
+			log.Printf("Warning: Workflow transition failed: %v, using local state machine.", err)
+			nextStatus := getLocalNextState("INITIATED", connection.ProcessInstance.Action)
+			connection.ApplicationStatus = nextStatus
+			connection.Status = nextStatus
 		} else if pi != nil {
 			// update application status if workflow changed it
 			if pi.State != nil && pi.State.ApplicationStatus != "" {
@@ -124,6 +127,10 @@ func (s *sewerageService) CreateConnection(
 				connection.Status = pi.Action
 			}
 		}
+	} else {
+		nextStatus := getLocalNextState("INITIATED", connection.ProcessInstance.Action)
+		connection.ApplicationStatus = nextStatus
+		connection.Status = nextStatus
 	}
 
 	// Publish to Kafka topic save-sw-connection
@@ -237,7 +244,10 @@ func (s *sewerageService) UpdateConnection(
 	if s.workflowClient != nil {
 		pi, err := s.workflowClient.CallWorkflow(reqInfo, connection)
 		if err != nil {
-			log.Printf("Warning: Workflow transition failed: %v", err)
+			log.Printf("Warning: Workflow transition failed: %v, using local state machine.", err)
+			nextStatus := getLocalNextState(connection.ApplicationStatus, action)
+			connection.ApplicationStatus = nextStatus
+			connection.Status = nextStatus
 		} else if pi != nil {
 			if pi.State != nil && pi.State.ApplicationStatus != "" {
 				connection.ApplicationStatus = pi.State.ApplicationStatus
@@ -247,6 +257,10 @@ func (s *sewerageService) UpdateConnection(
 				connection.Status = pi.Action
 			}
 		}
+	} else {
+		nextStatus := getLocalNextState(connection.ApplicationStatus, action)
+		connection.ApplicationStatus = nextStatus
+		connection.Status = nextStatus
 	}
 
 	// Update DB record
@@ -263,4 +277,24 @@ func (s *sewerageService) UpdateConnection(
 	_ = s.producer.PublishConnectionUpdated(kafkaReq, appNo)
 
 	return connection, nil
+}
+
+func getLocalNextState(currentStatus, action string) string {
+	switch action {
+	case "SUBMIT_APPLICATION":
+		return "PENDING_FOR_DOCUMENT_VERIFICATION"
+	case "VERIFY_AND_FORWARD":
+		if currentStatus == "PENDING_FOR_DOCUMENT_VERIFICATION" || currentStatus == "INITIATED" || currentStatus == "" {
+			return "PENDING_FOR_FIELD_INSPECTION"
+		}
+		return "PENDING_APPROVAL_FOR_CONNECTION"
+	case "APPROVE_FOR_CONNECTION":
+		return "PENDING_FOR_PAYMENT"
+	case "PAY":
+		return "PENDING_FOR_CONNECTION_ACTIVATION"
+	case "ACTIVATE_CONNECTION":
+		return "CONNECTION_ACTIVATED"
+	default:
+		return currentStatus
+	}
 }
